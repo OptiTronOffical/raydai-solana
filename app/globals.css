@@ -11,56 +11,85 @@
   body {
     background: #0A001F;
     color: white;
-    font-family: 'Geist', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 10px;
+/* Custom scrollbar for mobile */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0A001F;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #7B61FF 0%, #5B43F5 100%);
+    border-radius: 4px;
+  }
 }
 
-::-webkit-scrollbar-track {
-  background: #0A001F;
+/* Touch-friendly button styles */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  user-select: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #FF6B9D 0%, #7B61FF 50%, #00D4FF 100%);
-  border-radius: 5px;
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  html {
+    font-size: 16px;
+  }
+  
+  body {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  
+  button {
+    min-height: 56px; /* Minimum touch target size */
+  }
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #FF8BB3 0%, #8B71FF 50%, #00E4FF 100%);
-}
-
-/* Shine animation for premium effects */
+/* Shine animation */
 @keyframes shine {
-  0% { transform: translateX(-100%) rotate(45deg); }
-  100% { transform: translateX(200%) rotate(45deg); }
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(200%) rotate(45deg);
+  }
 }
 
-.shine-effect {
-  animation: shine 2s infinite;
+.animate-shine {
+  animation: shine 3s infinite;
 }
 
-/* Glowing border animation */
-@keyframes glow {
-  0%, 100% { box-shadow: 0 0 20px rgba(123, 97, 255, 0.5); }
-  50% { box-shadow: 0 0 40px rgba(123, 97, 255, 0.8); }
+/* Prevent text selection on interactive elements */
+button, [role="button"] {
+  user-select: none;
 }
 
-.glow-border {
-  animation: glow 2s infinite;
+/* Improve touch feedback */
+.tap-highlight {
+  transition: transform 0.1s ease;
 }
 
-/* Floating animation */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+.tap-highlight:active {
+  transform: scale(0.98);
 }
 
-.float-animation {
-  animation: float 3s ease-in-out infinite;
+/* Safe area for iPhone X+ */
+@supports (padding: max(0px)) {
+  body {
+    padding-left: min(0vmin, env(safe-area-inset-left));
+    padding-right: min(0vmin, env(safe-area-inset-right));
+    padding-bottom: min(0vmin, env(safe-area-inset-bottom));
+  }
 }

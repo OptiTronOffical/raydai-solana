@@ -7,12 +7,13 @@ const geist = Geist({ subsets: ["latin"] })
 const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "HyperSol Casino Beta | Get $5 SOL or 50 Free Spins",
-  description: "Connect your wallet to HyperSol Casino Beta and get $5 SOL or 50 free spins instantly. No deposit required. Play Solana casino games now!",
+  title: "HyperSol Casino | 50 Free Spins - Keep What You Win",
+  description: "Connect your wallet to HyperSol Casino and get 50 FREE SPINS instantly. No deposit required. Keep all your winnings - no wagering requirements!",
   icons: {
     icon: "/favicon.ico",
   },
-  generator: 'hypersol-casino'
+  generator: 'hypersol-casino',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 }
 
 export default function RootLayout({
