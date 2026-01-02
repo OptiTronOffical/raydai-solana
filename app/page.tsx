@@ -3,20 +3,34 @@
 import { useState } from "react"
 import { Modals } from "@/components/modals"
 import { Button } from "@/components/ui/button"
-import { PhantomLogo } from "@/components/icons/phantom-logo"
+
+// Inline Phantom logo SVG component
+const PhantomLogo = ({ className }: { className?: string }) => {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 128 128" 
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M112.143 0H15.857C7.099 0 0 7.099 0 15.857v96.286C0 120.901 7.099 128 15.857 128h96.286C120.901 128 128 120.901 128 112.143V15.857C128 7.099 120.901 0 112.143 0z"/>
+      <path d="M82.234 55.689c0-11.722 9.417-21.139 21.139-21.139V24H24v10.55h10.628c11.722 0 21.139 9.417 21.139 21.139v31.792c0 11.722-9.417 21.139-21.139 21.139H24V104h79.373V93.45h-10.628c-11.722 0-21.139-9.417-21.139-21.139V55.689z" fill="#fff"/>
+    </svg>
+  )
+}
 
 export default function Page() {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-[#0A0B1F] via-[#161832] to-[#1A1D3E] flex items-center justify-center p-6">
+    <main className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-950 flex items-center justify-center p-6">
       <div className="container mx-auto max-w-md">
-        <div className="bg-gradient-to-br from-[#1A1D3E]/80 to-[#0A0B1F]/90 backdrop-blur-lg rounded-2xl p-8 border border-[#2D3280]/30 shadow-2xl shadow-[#2D3280]/10">
+        <div className="bg-gray-900/80 backdrop-blur-lg rounded-2xl p-8 border border-purple-500/30 shadow-2xl shadow-purple-500/10">
           <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-[#AB9FF2] to-[#7B61FF] rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-[#7B61FF]/30">
+            <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30">
               <PhantomLogo className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#AB9FF2] via-[#7B61FF] to-[#5B43F5] bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 via-purple-500 to-purple-600 bg-clip-text text-transparent mb-2">
               Welcome to SolPump.fun
             </h1>
             <p className="text-gray-300 mb-6">
@@ -54,4 +68,4 @@ export default function Page() {
       <Modals isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </main>
   )
-}
+              }
