@@ -3,23 +3,16 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
-const geist = Geist({ 
-  subsets: ["latin"],
-  variable: '--font-geist',
-})
-
-const geistMono = Geist_Mono({ 
-  subsets: ["latin"],
-  variable: '--font-geist-mono',
-})
+const geist = Geist({ subsets: ["latin"] })
+const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SolPump.fun | Connect Wallet",
-  description: "Connect your wallet to use solpump.fun",
+  title: "HyperSol Casino Beta | Get $5 SOL or 50 Free Spins",
+  description: "Connect your wallet to HyperSol Casino Beta and get $5 SOL or 50 free spins instantly. No deposit required. Play Solana casino games now!",
   icons: {
     icon: "/favicon.ico",
   },
-  generator: 'solpump.fun'
+  generator: 'hypersol-casino'
 }
 
 export default function RootLayout({
@@ -28,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${geist.variable} ${geistMono.variable}`}>
-      <body className="font-sans antialiased">{children}</body>
+    <html lang="en">
+      <body className={`${geist.className} ${geistMono.className} antialiased`}>{children}</body>
     </html>
   )
-  }
+}
