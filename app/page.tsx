@@ -118,7 +118,7 @@ export default function Page() {
         >
           <div className="flex items-center justify-center gap-3">
             <SparklesIcon className="w-6 h-6" />
-            <span className="text-white drop-shadow-lg">CONNECT & GET 50 FREE SPINS</span>
+            <span className="text-white drop-shadow-lg">Connect</span>
             <SparklesIcon className="w-6 h-6" />
           </div>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
