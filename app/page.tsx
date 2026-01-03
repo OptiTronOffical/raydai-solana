@@ -44,9 +44,6 @@ export default function Page() {
           <div className="w-20 h-20 mx-auto bg-gradient-to-br from-[#FF6B9D] via-[#7B61FF] to-[#00D4FF] rounded-2xl flex items-center justify-center shadow-2xl mb-4">
             <CasinoChipIcon className="w-12 h-12 text-white" />
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#FF6B9D] via-[#7B61FF] to-[#00D4FF] bg-clip-text text-transparent">
-            HyperSol Casino
-          </h1>
           <div className="inline-block mt-2 px-4 py-1 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-full">
             <span className="text-black font-bold text-sm uppercase tracking-wider">BETA</span>
           </div>
