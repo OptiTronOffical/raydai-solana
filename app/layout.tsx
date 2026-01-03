@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "RAYDAI | Connect Wallet for $50 SOL Giveaway",
   description: "Join RAYDAI AI Staking Platform. Connect your wallet to enter our exclusive $50 SOL giveaway. Premium GPU computing and massive rewards await!",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon.ico",
   },
   keywords: "RAYDAI, raydai token, AI staking, GPU computing, SOL giveaway, $50 SOL, cryptocurrency, AI mining",
   authors: [{ name: "RAYDAI Team" }],
