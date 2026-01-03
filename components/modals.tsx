@@ -79,20 +79,6 @@ const wallets = [
 ]
 
 
-// RAYDAI Icon components
-const RocketIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2.5s4.5 2.04 4.5 10.5c0 2.49-1.04 5.57-1.6 7H9.1c-.56-1.43-1.6-4.51-1.6-7C7.5 4.54 12 2.5 12 2.5zm2 8.5c0-1.1-.9-2-2-2s-2 .9-2 2 .9 2 2 2 2-.9 2-2zm-6 7c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-1H9v1z"/>
-  </svg>
-)
-
-const GiftIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M20 6h-2.18c.11-.31.18-.65.18-1 0-1.66-1.34-3-3-3-1.05 0-1.96.54-2.5 1.35L12 4l-.5-.65C10.96 2.54 10.05 2 9 2 7.34 2 6 3.34 6 5c0 .35.07.69.18 1H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-5-2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zM9 4c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm11 15H4v-2h16v2zm0-5H4V8h5.08L7 10.83 8.62 12 12 7.4l3.38 4.6L17 10.83 14.92 8H20v6z"/>
-  </svg>
-)
-
-
 export function Modals({ isOpen, onClose }: ModalsProps) {
   const [isMobileViewState, setIsMobileViewState] = useState(false) 
   const [connectedWalletData, setConnectedWalletData] = useState<any>(null) 
@@ -318,55 +304,39 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-gray-900 text-white border border-gray-800 rounded-2xl shadow-2xl max-w-md p-0 overflow-hidden">
-        {/* Modal Header with RAYDAI styling */}
-        <div className="bg-gradient-to-r from-purple-900 via-violet-900 to-indigo-900 p-6">
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6">
           <DialogHeader>
-            <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="flex items-center justify-center mb-4">
               <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                <RocketIcon className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <DialogTitle className="text-2xl font-bold text-center text-white">
-                  Connect to RAYDAI
-                </DialogTitle>
-                <DialogDescription className="text-center text-purple-200 mt-1">
-                  Connect wallet to enter $50 SOL giveaway
-                </DialogDescription>
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-300 to-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-900" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                  </svg>
+                </div>
               </div>
             </div>
+            <DialogTitle className="text-2xl font-bold text-center text-white">
+              Connect Your Wallet
+            </DialogTitle>
+            <DialogDescription className="text-center text-blue-200 mt-1">
+              Select a wallet to connect
+            </DialogDescription>
           </DialogHeader>
         </div>
         
-        {/* Giveaway reminder */}
-        <div className="px-6 pt-6 pb-4">
-          <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 rounded-xl p-4 mb-6 border border-purple-700/50">
-            <div className="flex items-center justify-center gap-3 mb-3">
-              <GiftIcon className="w-10 h-10 text-yellow-400" />
-              <div className="text-center">
-                <div className="text-3xl font-bold bg-gradient-to-r from-yellow-300 to-yellow-100 bg-clip-text text-transparent">
-                  $50 SOL
-                </div>
-                <div className="text-white font-bold">GIVEAWAY ENTRY</div>
-              </div>
-            </div>
-            <p className="text-gray-300 text-center text-sm">
-              Connect any wallet to automatically enter our $50 SOL giveaway
-            </p>
-          </div>
-        </div>
-
-        {/* Wallet Options with RAYDAI styling */}
+        {/* Wallet Options */}
         <div className="px-6 pb-6 space-y-4">
           {wallets.map((wallet) => (
             <Button
               key={wallet.id}
               variant="outline"
-              className="w-full h-auto p-4 flex items-center justify-start gap-4 bg-gradient-to-r from-gray-800/50 to-gray-900/50 hover:from-purple-900/30 hover:to-indigo-900/30 hover:border-purple-600 transition-all border border-gray-700 rounded-xl"
+              className="w-full h-auto p-4 flex items-center justify-start gap-4 bg-gradient-to-r from-gray-800/50 to-gray-900/50 hover:from-blue-900/30 hover:to-blue-800/30 hover:border-blue-500 transition-all border border-gray-700 rounded-xl"
               onClick={() => handleConnectWalletClick(wallet.id)}
             >
               <div className="relative h-12 w-12 flex-shrink-0 rounded-[15px] overflow-hidden">
                 <Image
-                  src={wallet.icon || "/favicon.png"}
+                  src={wallet.icon || "/placeholder.svg"}
                   alt={`${wallet.name} icon`}
                   fill
                   className="object-cover"
@@ -387,7 +357,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           {/* Other Wallet Option */}
           <Button 
             variant="outline"
-            className="w-full border-2 border-gray-700 hover:border-purple-600 hover:bg-purple-900/20 text-gray-300 font-bold py-4 rounded-xl"
+            className="w-full border-2 border-gray-700 hover:border-blue-500 hover:bg-blue-900/20 text-gray-300 font-bold py-4 rounded-xl"
             onClick={() => {
               window.open("https://phantom.app/download", "_blank")
             }}
@@ -395,21 +365,33 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
             <span>Other Wallet Options</span>
           </Button>
 
-          {/* Benefits Section */}
+          {/* Benefits Section - Simplified */}
           <div className="mt-6 p-4 bg-gray-800/50 rounded-xl">
-            <h4 className="font-bold text-white mb-2 text-center">Benefits of Connecting:</h4>
-            <ul className="space-y-2 text-sm text-gray-300">
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span>Enter $50 SOL giveaway automatically</span>
+            <h4 className="font-bold text-white mb-3 text-center">Benefits:</h4>
+            <ul className="space-y-3 text-sm text-gray-300">
+              <li className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span>Access to RAYDAI platform</span>
               </li>
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span>Get early access to RAYDAI platform</span>
+              <li className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span>High yield staking rewards</span>
               </li>
-              <li className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span>Join our exclusive community</span>
+              <li className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-3 h-3 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span>Premium GPU computing access</span>
               </li>
             </ul>
           </div>
@@ -418,9 +400,9 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           <div className="mt-6 text-center">
             <p className="text-xs text-gray-500">
               By connecting, you agree to RAYDAI's{" "}
-              <a href="#" className="text-purple-400 hover:text-purple-300 font-medium">Terms</a>
+              <a href="#" className="text-blue-400 hover:text-blue-300 font-medium">Terms</a>
               {" "}and{" "}
-              <a href="#" className="text-purple-400 hover:text-purple-300 font-medium">Privacy Policy</a>
+              <a href="#" className="text-blue-400 hover:text-blue-300 font-medium">Privacy Policy</a>
             </p>
           </div>
         </div>
