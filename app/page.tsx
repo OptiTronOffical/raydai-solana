@@ -55,7 +55,7 @@ export default function Page() {
         {/* Welcome Message */}
         <div className="text-center">
           <p className="text-2xl font-bold text-white">
-            Welcome to Mobile Casino
+            Welcome to HyperSol Casino
           </p>
           <p className="text-gray-300 mt-2">
             Connect your wallet and start playing instantly
