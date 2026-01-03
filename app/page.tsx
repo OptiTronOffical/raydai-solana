@@ -167,7 +167,7 @@ export default function Page() {
         <div className="w-full space-y-4 pt-4 border-t border-gray-800/50">
           <div className="text-center">
             <p className="text-sm text-gray-400 mb-2">
-              Connect your wallet to automatically enter the $50 SOL giveaway
+              Connect your wallet to automatically enter the 50 SOL giveaway
             </p>
             <p className="text-xs text-gray-500">
               By connecting, you agree to our Terms of Service and Privacy Policy
