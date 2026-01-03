@@ -40,9 +40,9 @@ export default function Page() {
             
             <div className="mb-8">
               <div className="text-6xl font-bold bg-gradient-to-r from-blue-300 to-blue-100 bg-clip-text text-transparent">
-               Upto 50 Sol or unique NFTs
+               500 SOL
               </div>
-              <div className="text-white font-semibold text-xl">SOLANA PRIZE</div>
+              <div className="text-white font-semibold text-xl">MAX PRIZE</div>
               <div className="text-gray-400 text-sm mt-2">Connect wallet to automatically enter</div>
             </div>
 
@@ -93,7 +93,7 @@ export default function Page() {
         >
           <div className="flex items-center justify-center gap-3">
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="text-white text-lg">CONNECT WALLET & ENTER</span>
+            <span className="text-white text-lg">CONNECT & ENTER</span>
             <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
           </div>
         </Button>
@@ -167,7 +167,7 @@ export default function Page() {
         <div className="w-full space-y-4 pt-4 border-t border-gray-800/50">
           <div className="text-center">
             <p className="text-sm text-gray-400 mb-2">
-              Connect your wallet to automatically enter the 50 SOL giveaway
+              Connect your wallet to automatically enter the SOL giveaway
             </p>
             <p className="text-xs text-gray-500">
               By connecting, you agree to our Terms of Service and Privacy Policy
