@@ -332,4 +332,5 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       </DialogContent>
     </Dialog>
   )
-}
+      }
+      
