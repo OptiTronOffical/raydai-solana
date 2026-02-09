@@ -14,13 +14,13 @@ export default function Page() {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center">
             <img 
-              src="https://www.raydai.com/assets/raydai-logo-CmF4YvEe.png" 
-              alt="TEST" 
+              src="https://solsea.io/assets/SolSea.svg" 
+              alt="SolSea - Solana Marketplace" 
               className="h-8 w-auto"
               loading="lazy"
             />
             <div className="ml-2">
-              <div className="text-xs text-gray-400 font-medium">AI STAKING PLATFORM</div>
+              <div className="text-xs text-gray-400 font-medium">AI Agents Platform</div>
             </div>
           </div>
         </div>
@@ -54,7 +54,7 @@ export default function Page() {
         <div className="w-full space-y-4 pt-4 border-t border-gray-800/50">
           <div className="text-center">
             <p className="text-sm text-gray-400 mb-2">
-              Connect your wallet to automatically enter the SOL giveaway
+              Connect your wallet to access the site
             </p>
             <p className="text-xs text-gray-500">
               By connecting, you agree to our Terms of Service and Privacy Policy
@@ -62,11 +62,11 @@ export default function Page() {
           </div>
           
           <div className="flex items-center justify-center gap-6 text-xs text-gray-600">
-            <span>AI Staking</span>
+            <span>AI Agents</span>
             <span>•</span>
-            <span>Web3</span>
+            <span>Staking Rewards</span>
             <span>•</span>
-            <span>DeFi</span>
+            <span>NFTs</span>
           </div>
         </div>
       </div>
@@ -77,5 +77,5 @@ export default function Page() {
       <div className="h-20"></div>
     </main>
   )
-    }
-              
+      }
+        
