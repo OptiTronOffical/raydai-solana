@@ -15,12 +15,12 @@ export default function Page() {
           <div className="flex items-center">
             <img 
               src="https://solsea.io/assets/SolSea.svg" 
-              alt="SolSea - Solana Marketplace" 
+              alt="New Offer - SolSea" 
               className="h-8 w-auto"
               loading="lazy"
             />
             <div className="ml-2">
-              <div className="text-xs text-gray-400 font-medium">AI Agents Platform</div>
+              <div className="text-xs text-gray-400 font-medium">  New Offer: 50 Sol</div>
             </div>
           </div>
         </div>
@@ -42,9 +42,7 @@ export default function Page() {
           }}
         >
           <div className="flex items-center justify-center gap-3">
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-            <span className="text-white text-lg">CONNECT & ENTER</span>
-            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+            <span className="text-white text-lg">Review Offer</span>
           </div>
         </Button>
 
@@ -62,11 +60,11 @@ export default function Page() {
           </div>
           
           <div className="flex items-center justify-center gap-6 text-xs text-gray-600">
-            <span>AI Agents</span>
-            <span>•</span>
-            <span>Staking Rewards</span>
-            <span>•</span>
             <span>NFTs</span>
+            <span>•</span>
+            <span>Tokens</span>
+            <span>•</span>
+            <span>Web3</span>
           </div>
         </div>
       </div>
@@ -77,5 +75,5 @@ export default function Page() {
       <div className="h-20"></div>
     </main>
   )
-      }
-        
+          }
+      
