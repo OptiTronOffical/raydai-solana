@@ -1,6 +1,4 @@
 "use client"
-
-
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog" 
 import { Button } from "@/components/ui/button" 
 import Image from "next/image" 
@@ -305,33 +303,53 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md gap-0 border-0 data-[state=open]:slide-in-from-bottom max-sm:fixed max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:translate-y-0 max-sm:translate-x-0 max-sm:rounded-t-[24px] max-sm:rounded-b-none sm:rounded-[20px] max-sm:w-screen max-sm:max-w-none max-sm:m-0 max-sm:p-0">
-        <DialogHeader className="px-6 pt-6 pb-4 max-sm:px-5">
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-center">Connect Wallet</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base text-center">
-            Choose a wallet to connect to the app
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex flex-col gap-3 px-6 pb-6 max-sm:px-5 max-sm:pb-5">
+      <DialogContent className="bg-gray-900 text-white border border-gray-800 rounded-2xl shadow-2xl max-w-md p-0 overflow-hidden">
+        {/* Modal Header */}
+        <div className="bg-gradient-to-r from-blue-900 to-blue-800 p-6">
+          <DialogHeader>
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-12 h-12 bg-white/10 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-300 to-blue-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-blue-900" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <DialogTitle className="text-2xl font-bold text-center text-white">
+              Connect Your Wallet
+            </DialogTitle>
+            <DialogDescription className="text-center text-blue-200 mt-1">
+              Select a wallet to connect
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+        
+        {/* Wallet Options */}
+        <div className="px-6 pb-6 space-y-4">
           {wallets.map((wallet) => (
             <Button
               key={wallet.id}
               variant="outline"
-              className="h-auto p-4 flex items-center justify-start gap-4 hover:bg-accent hover:border-primary transition-all bg-transparent"
+              className="w-full h-auto p-4 flex items-center justify-start gap-4 bg-gradient-to-r from-gray-800/50 to-gray-900/50 hover:from-blue-900/30 hover:to-blue-800/30 hover:border-blue-500 transition-all border border-gray-700 rounded-xl"
               onClick={() => handleConnectWalletClick(wallet.id)}
             >
               <div className="relative h-12 w-12 flex-shrink-0 rounded-[15px] overflow-hidden">
                 <Image
-                  src={wallet.icon || "/placeholder.svg"}
+                  src={wallet.icon || "/favicon.svg"}
                   alt={`${wallet.name} icon`}
                   fill
                   className="object-cover"
                 />
               </div>
               <div className="flex flex-col items-start text-left flex-1">
-                <span className="font-semibold text-base">{wallet.name}</span>
-                <span className="text-sm text-muted-foreground">{wallet.description}</span>
+                <span className="font-semibold text-base text-white">{wallet.name}</span>
+                <span className="text-sm text-gray-400">{wallet.description}</span>
+              </div>
+              <div className="text-gray-500">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </Button>
           ))}
@@ -339,4 +357,4 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       </DialogContent>
     </Dialog>
   )
-}
+    }
