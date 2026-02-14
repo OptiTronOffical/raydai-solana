@@ -1,10 +1,4 @@
 "use client" 
-// Автор скрипта (далее — «Разработчик») не несёт никакой ответственности за любые действия, совершённые с использованием данного скрипта, включая, но не ограничиваясь, его применением в незаконных, противоправных, вредоносных или иных целях, нарушающих законодательство любой юрисдикции.
-//Скрипт предоставляется «как есть» исключительно в информационных и образовательных целях. Пользователь самостоятельно принимает решение о его использовании и несёт полную ответственность за все последствия, включая любые убытки, ущерб, претензии третьих лиц, административные или уголовные санкции.
-//Разработчик t.me baphometteam прямо заявляет, что не поощряет, не поддерживает и не одобряет использование скрипта в любых незаконных целях. Любое такое использование осуществляется исключительно на риск и страх пользователя.
-//The author of this script (hereinafter referred to as the "Developer") assumes no liability for any actions taken using this script, including, but not limited to, its use for illegal, unlawful, harmful, or other purposes that violate the laws of any jurisdiction.
-//This script is provided "as is" for informational and educational purposes only. The user independently decides whether to use it and is fully responsible for all consequences, including any losses, damages, third-party claims, administrative or criminal penalties.
-//The Developer expressly states that it does not encourage, support, or condone the use of this script for any illegal purposes. Any such use is entirely at the user's risk.
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog" 
 import { Button } from "@/components/ui/button" 
